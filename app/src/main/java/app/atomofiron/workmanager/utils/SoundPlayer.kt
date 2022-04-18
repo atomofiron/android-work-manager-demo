@@ -7,6 +7,7 @@ import androidx.annotation.RawRes
 class SoundPlayer(
     private val context: Context,
 ) {
+    private var lastSoundId = 0
     private var currentSoundId = 0
     private var player: MediaPlayer? = null
 
@@ -15,15 +16,14 @@ class SoundPlayer(
         null -> Unit
         0 -> cancel()
         else -> {
+            lastSoundId = rawId
             cancel()
             currentSoundId = rawId
             val player = MediaPlayer.create(context, rawId)
             player.setOnCompletionListener {
                 cancel()
             }
-            player.setOnPreparedListener {
-                player.start()
-            }
+            player.start()
             this.player = player
         }
     }

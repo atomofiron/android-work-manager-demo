@@ -1,17 +1,20 @@
 package app.atomofiron.workmanager.ui.weather
 
-import androidx.lifecycle.ViewModelProvider
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.AlphaAnimation
-import androidx.core.view.*
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import app.atomofiron.workmanager.collectOnView
 import app.atomofiron.workmanager.databinding.WeatherFragmentBinding
 import app.atomofiron.workmanager.ui.weather.state.WeatherState
+import com.google.android.exoplayer2.ui.AspectRatioFrameLayout
 
 class WeatherFragment : Fragment() {
 
@@ -47,6 +50,9 @@ class WeatherFragment : Fragment() {
             binding.srl.setProgressViewOffset(false, defaultStartOffset, end)
             windowInsets
         }
+        binding.spvMovie.player = viewModel.exoPlayer
+        binding.spvMovie.useController = false
+        binding.spvMovie.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FILL
         return binding.root
     }
 

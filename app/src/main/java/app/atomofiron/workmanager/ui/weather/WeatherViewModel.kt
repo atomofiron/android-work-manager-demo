@@ -4,12 +4,11 @@ import androidx.lifecycle.ViewModel
 import app.atomofiron.workmanager.api.MainWeather
 import app.atomofiron.workmanager.api.response.WeatherResponse
 import app.atomofiron.workmanager.dataFlow
-import app.atomofiron.workmanager.say
 import app.atomofiron.workmanager.ui.weather.state.WeatherInfo
 import app.atomofiron.workmanager.ui.weather.state.WeatherState
 import app.atomofiron.workmanager.ui.weather.state.WeatherType
 import app.atomofiron.workmanager.value
-import app.atomofiron.workmanager.valueOrNull
+import com.google.android.exoplayer2.ExoPlayer
 import retrofit2.Response
 
 class WeatherViewModel : ViewModel() {
@@ -17,7 +16,11 @@ class WeatherViewModel : ViewModel() {
     val presenter = WeatherPresenter(this)
 
     val state = dataFlow(WeatherState(isRefreshing = true, isError = false, weatherInfo = null))
+    lateinit var exoPlayer: ExoPlayer
+
     var soundResId: Int? = null
+        private set
+    var videoResId: Int? = null
         private set
     var weatherTypeWasChanged = true
         private set
@@ -27,6 +30,7 @@ class WeatherViewModel : ViewModel() {
         val new = action(state.value)
         weatherTypeWasChanged = weatherType !== new.weatherInfo?.weatherType
         soundResId = new.weatherInfo?.weatherType?.soundResId?.takeIf { weatherTypeWasChanged }
+        videoResId = new.weatherInfo?.weatherType?.videoResId?.takeIf { weatherTypeWasChanged }
         state.value = new
     }
 
