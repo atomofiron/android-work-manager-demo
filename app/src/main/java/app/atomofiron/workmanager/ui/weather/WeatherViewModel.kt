@@ -1,5 +1,6 @@
 package app.atomofiron.workmanager.ui.weather
 
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import app.atomofiron.workmanager.api.MainWeather
 import app.atomofiron.workmanager.api.response.WeatherResponse
@@ -14,6 +15,7 @@ import retrofit2.Response
 class WeatherViewModel : ViewModel() {
 
     val presenter = WeatherPresenter(this)
+    private val locale get() = LocaleListCompat.getDefault().get(0)
 
     val state = dataFlow(WeatherState(isRefreshing = true, isError = false, weatherInfo = null))
     lateinit var exoPlayer: ExoPlayer
@@ -38,14 +40,17 @@ class WeatherViewModel : ViewModel() {
         copy(isRefreshing = false, isError = true, weatherInfo = null)
     }
 
-    fun randomType() {
+    fun randomInfo() {
+        val index = (Math.random() * WeatherType.values.size).toInt()
+        val wtf = WeatherType.values[index]
         val info = WeatherInfo(
-            cityName = "",
-            weatherType = WeatherType.values[(Math.random() * WeatherType.values.size).toInt()],
-            temperature = 0f,
-            feelsLike = 0f,
-            windSpeed = 0f,
-            windDeg = 0,
+            weatherType = wtf,
+            weatherDescription = "Фиг пойми",
+            cityName = "Ростов-на-Волге",
+            temperature = 30,
+            feelsLike = 99,
+            windSpeed = (Math.random() * 30).toInt(),
+            windDeg = (Math.random() * 360).toInt(),
         )
         updateState {
             copy(isRefreshing = false, isError = false, weatherInfo = info)
@@ -56,13 +61,14 @@ class WeatherViewModel : ViewModel() {
         val weatherResponse = response.body()
         val weatherData = weatherResponse?.weather?.firstOrNull()
         if (response.isSuccessful && weatherResponse != null && weatherData != null) {
-            val type = MainWeather.getType(weatherData.main, weatherData.description, forDay = true)
+            val type = MainWeather.getType(weatherData.id, forDay = true)
             val info = WeatherInfo(
-                cityName = weatherResponse.name,
                 weatherType = type,
-                temperature = weatherResponse.main.temp,
-                feelsLike = weatherResponse.main.feels_like,
-                windSpeed = weatherResponse.wind.speed,
+                weatherDescription = weatherData.description.replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() },
+                cityName = weatherResponse.name,
+                temperature = weatherResponse.main.temp.toInt(),
+                feelsLike = weatherResponse.main.feels_like.toInt(),
+                windSpeed = weatherResponse.wind.speed.toInt(),
                 windDeg = weatherResponse.wind.deg,
             )
             updateState {

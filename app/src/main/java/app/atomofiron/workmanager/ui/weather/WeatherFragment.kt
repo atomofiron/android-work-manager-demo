@@ -4,13 +4,11 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.AccelerateInterpolator
-import android.view.animation.AlphaAnimation
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.isVisible
+import android.view.animation.AnimationUtils
+import androidx.core.view.*
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import app.atomofiron.workmanager.R
 import app.atomofiron.workmanager.collectOnView
 import app.atomofiron.workmanager.databinding.WeatherFragmentBinding
 import app.atomofiron.workmanager.ui.weather.state.WeatherState
@@ -44,10 +42,11 @@ class WeatherFragment : Fragment() {
         }
         val defaultStartOffset = binding.srl.progressViewStartOffset
         val defaultEndOffset = binding.srl.progressViewEndOffset
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, windowInsets ->
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, windowInsets ->
             val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
             val end = defaultEndOffset + insets.top
             binding.srl.setProgressViewOffset(false, defaultStartOffset, end)
+            binding.includeHeader.root.updatePaddingRelative(top = insets.top)
             windowInsets
         }
         binding.spvMovie.player = viewModel.exoPlayer
@@ -70,19 +69,32 @@ class WeatherFragment : Fragment() {
     }
 
     private fun render(state: WeatherState) {
+        val weatherInfo = state.weatherInfo
         binding.run {
             srl.isRefreshing = state.isRefreshing
-            imNoInfo.isVisible = state.isError || state.weatherInfo == null
-            imWeather.isVisible = state.weatherInfo != null
-            state.weatherInfo?.let { weather ->
+            imNoInfo.isVisible = state.isError || weatherInfo == null
+            imWeather.isVisible = weatherInfo != null
+            includeHeader.run {
+                root.isGone = weatherInfo == null
+                if (weatherInfo != null) {
+                    tvWeatherTemperature.text = getString(R.string.header_temperature, weatherInfo.temperature)
+                    tvWeatherDescription.text = weatherInfo.weatherDescription
+                    tvWeatherSubline.text = getString(R.string.header_subline, weatherInfo.cityName, weatherInfo.windSpeed)
+                }
+            }
+            state.weatherInfo?.takeIf { !state.isRefreshing }?.let { weather ->
                 imWeather.setImageResource(weather.weatherType.backgroundResId)
+
+                val topLine = AnimationUtils.loadAnimation(context, R.anim.weather_info_appearance)
+                includeHeader.tvWeatherTemperature.animation = topLine
+                includeHeader.tvWeatherDescription.animation = topLine
+                val subLine = AnimationUtils.loadAnimation(context, R.anim.weather_info_appearance)
+                subLine.startOffset = topLine.duration / 2
+                includeHeader.tvWeatherSubline.animation = subLine
+
                 if (viewModel.weatherTypeWasChanged) {
-                    val anim = AlphaAnimation(0f, 1f)
-                    anim.duration = 300
-                    anim.interpolator = AccelerateInterpolator()
-                    anim.fillBefore = true
-                    anim.fillAfter = true
-                    imWeather.startAnimation(anim)
+                    val anim = AnimationUtils.loadAnimation(context, R.anim.weather_picture_appearance)
+                    spvMovie.startAnimation(anim)
                 }
             }
         }

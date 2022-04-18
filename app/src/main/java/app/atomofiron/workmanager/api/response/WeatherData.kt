@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 class WeatherData(
-    val id: Long,
+    val id: Int,
     val main: String,
     val description: String,
     val icon: String,

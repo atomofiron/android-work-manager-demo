@@ -7,6 +7,9 @@ import androidx.annotation.RawRes
 class SoundPlayer(
     private val context: Context,
 ) {
+    companion object {
+        private const val VOLUME = 0.5f
+    }
     private var lastSoundId = 0
     private var currentSoundId = 0
     private var player: MediaPlayer? = null
@@ -23,6 +26,7 @@ class SoundPlayer(
             player.setOnCompletionListener {
                 cancel()
             }
+            player.setVolume(VOLUME, VOLUME)
             player.start()
             this.player = player
         }

@@ -16,7 +16,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
-import okhttp3.MediaType
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Call
 import retrofit2.Retrofit
 
@@ -26,12 +28,17 @@ class WeatherPresenter(
 ) {
     private val factory = Json {
         ignoreUnknownKeys = true
-    }.asConverterFactory(MediaType.get("application/json"))
+    }.asConverterFactory("application/json".toMediaType())
 
     private val retrofit = Retrofit.Builder()
         .baseUrl("https://api.openweathermap.org/")
         .addConverterFactory(factory)
-        .build()
+        .client(OkHttpClient.Builder().run {
+            val interceptor = HttpLoggingInterceptor()
+            interceptor.setLevel(HttpLoggingInterceptor.Level.BODY)
+            addInterceptor(interceptor)
+            build()
+        }).build()
 
     private val service: WeatherService = retrofit.create(WeatherService::class.java)
     private var call: Call<WeatherResponse?>? = null
@@ -60,25 +67,28 @@ class WeatherPresenter(
     private fun refresh(withFeedback: Boolean) {
         call?.cancel()
         viewModel.viewModelScope.launch(Dispatchers.IO) {
-            if (true) {
+            if (withFeedback) {
                 delay(1000)
-                viewModel.randomType()
-                soundPlayer.play(viewModel.soundResId)
-                viewModel.videoResId?.takeIf { it != 0 }?.let { videoResId ->
-                    playVideo(videoResId)
-                }
-                if (withFeedback) poolPlayer.playUpdating()
+                viewModel.randomInfo()
+                playWeather(withFeedback)
             } else {
                 val call = service.weather()
                 this@WeatherPresenter.call = call
                 val response = call.execute()
                 if (!call.isCanceled) {
                     viewModel.updateInfo(response)
-                    soundPlayer.play(viewModel.soundResId)
-                    if (withFeedback) poolPlayer.playUpdating()
+                    playWeather(withFeedback)
                 }
             }
         }
+    }
+
+    private fun playWeather(withFeedback: Boolean) {
+        soundPlayer.play(viewModel.soundResId)
+        viewModel.videoResId?.takeIf { it != 0 }?.let { videoResId ->
+            playVideo(videoResId)
+        }
+        if (withFeedback) poolPlayer.playUpdating()
     }
 
     private fun playVideo(rawId: Int) {
