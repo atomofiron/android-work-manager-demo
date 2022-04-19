@@ -13,7 +13,7 @@ sealed class WeatherType(
     val videoResId: Int,
 ) {
     companion object {
-        // в котлине баг, 3й элемент просто null
+        // в котлине баг? 3й элемент просто null
         val values get() = arrayOf(
             Unknown, Hot, PartlySunny, ClearDay, ClearNight, SnowDay, SnowNight, RainDay, RainNight, PartlyCloudDay,
             PartlyCloudNight, CloudyDay, CloudyNight, FogDay, FogNight, ThunderstormDay, ThunderstormNight
@@ -23,7 +23,7 @@ sealed class WeatherType(
     object Unknown : WeatherType(0, 0, 0)
 
     object Hot : WeatherType(R.drawable.weather_hot, R.raw.sound_hot, R.raw.weather_hot)
-    object PartlySunny : WeatherType(R.drawable.weather_partly_sunny, R.raw.sound_sunny, R.raw.weather_sunny)
+    object PartlySunny : WeatherType(R.drawable.weather_partly_sunny, R.raw.sound_sunny, R.raw.weather_partly_sunny)
 
     object ClearDay : WeatherType(R.drawable.weather_sunny, R.raw.sound_sunny, R.raw.weather_sunny)
     object ClearNight : WeatherType(R.drawable.weather_clear, R.raw.sound_clouds, R.raw.weather_clear)

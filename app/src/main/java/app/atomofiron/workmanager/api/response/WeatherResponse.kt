@@ -10,6 +10,9 @@ class WeatherResponse(
     val main: MainData,
     val wind: WindData,
     val clouds: CloudsData,
+    val dt: Long,
     val sys: SysData,
     val visibility: Int,
+    // сообщение об ошибке
+    val message: String? = null,
 )

@@ -2,46 +2,28 @@ package app.atomofiron.workmanager.ui.weather
 
 import android.media.MediaPlayer
 import android.net.Uri
+import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
+import androidx.work.*
 import app.atomofiron.workmanager.App
-import app.atomofiron.workmanager.api.WeatherService
-import app.atomofiron.workmanager.api.response.WeatherResponse
+import app.atomofiron.workmanager.ui.weather.state.WeatherInfo
 import app.atomofiron.workmanager.utils.PoolPlayer
 import app.atomofiron.workmanager.utils.SoundPlayer
+import app.atomofiron.workmanager.worker.CachingWeatherWorker
+import app.atomofiron.workmanager.worker.RequestingWeatherWorker
+import app.atomofiron.workmanager.worker.WorkerApi
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.Player
-import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.Call
-import retrofit2.Retrofit
 
-@Suppress("JSON_FORMAT_REDUNDANT", "OPT_IN_USAGE")
 class WeatherPresenter(
     private val viewModel: WeatherViewModel,
 ) {
-    private val factory = Json {
-        ignoreUnknownKeys = true
-    }.asConverterFactory("application/json".toMediaType())
 
-    private val retrofit = Retrofit.Builder()
-        .baseUrl("https://api.openweathermap.org/")
-        .addConverterFactory(factory)
-        .client(OkHttpClient.Builder().run {
-            val interceptor = HttpLoggingInterceptor()
-            interceptor.setLevel(HttpLoggingInterceptor.Level.BODY)
-            addInterceptor(interceptor)
-            build()
-        }).build()
-
-    private val service: WeatherService = retrofit.create(WeatherService::class.java)
-    private var call: Call<WeatherResponse?>? = null
+    private val workManager = WorkManager.getInstance(App.context)
     private val soundPlayer = SoundPlayer(App.context)
     private val poolPlayer = PoolPlayer(App.context)
     private val exoPlayer = ExoPlayer.Builder(App.context)
@@ -65,21 +47,33 @@ class WeatherPresenter(
     fun onStopped() = soundPlayer.cancel()
 
     private fun refresh(withFeedback: Boolean) {
-        call?.cancel()
-        viewModel.viewModelScope.launch(Dispatchers.IO) {
-            if (withFeedback) {
-                delay(1000)
-                viewModel.randomInfo()
-                playWeather(withFeedback)
-            } else {
-                val call = service.weather()
-                this@WeatherPresenter.call = call
-                val response = call.execute()
-                if (!call.isCanceled) {
-                    viewModel.updateInfo(response)
-                    playWeather(withFeedback)
+        val requesting = OneTimeWorkRequestBuilder<RequestingWeatherWorker>()
+            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+            .setInputData(RequestingWeatherWorker.getInputData(fakeInfo = withFeedback))
+            .build()
+        workManager
+            .beginUniqueWork(WorkerApi.REQUESTING_NAME, ExistingWorkPolicy.REPLACE, requesting)
+            .then(OneTimeWorkRequest.from(CachingWeatherWorker::class.java))
+            .enqueue()
+
+        observeRequest(requesting, withFeedback)
+    }
+
+    private fun observeRequest(request: OneTimeWorkRequest, withFeedback: Boolean) {
+        viewModel.viewModelScope.launch {
+            workManager.getWorkInfoByIdLiveData(request.id)
+                .asFlow()
+                .collect {
+                    when (it?.state) {
+                        WorkInfo.State.SUCCEEDED -> {
+                            viewModel.updateState {
+                                copy(isRefreshing = false, isError = false, weatherInfo = WeatherInfo.fromData(it.outputData))
+                            }
+                            playWeather(withFeedback)
+                        }
+                        WorkInfo.State.FAILED -> viewModel.showError()
+                    }
                 }
-            }
         }
     }
 
@@ -98,7 +92,7 @@ class WeatherPresenter(
                 .authority(App.context.packageName)
                 .path(rawId.toString())
                 .build()
-            val mediaItem: MediaItem = MediaItem.fromUri(uri)
+            val mediaItem = MediaItem.fromUri(uri)
             exoPlayer.setMediaItem(mediaItem)
             exoPlayer.prepare()
             exoPlayer.play()
