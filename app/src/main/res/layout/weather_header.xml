@@ -12,6 +12,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
         android:textSize="96sp"
         android:fontFamily="sans-serif-thin"
         android:shadowColor="#000"
@@ -20,6 +21,20 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:text="30°"
+        />
+    <!--
+     хитрый хак, чтобы выровнять описание по бейздайну второй строки
+     если в одну не помещается
+      -->
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tv_weather_baseline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="48sp"
+        android:fontFamily="sans-serif-thin"
+        app:layout_constraintStart_toEndOf="@+id/tv_weather_temperature"
+        app:layout_constraintBaseline_toBaselineOf="@+id/tv_weather_temperature"
+        tools:text="_"
         />
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/tv_weather_description"
@@ -32,8 +47,9 @@
         android:shadowRadius="8"
         android:shadowDy="2"
         app:layout_constraintStart_toEndOf="@+id/tv_weather_temperature"
-        app:layout_constraintBaseline_toBaselineOf="@+id/tv_weather_temperature"
-        tools:text="Облачно"
+        app:layout_constraintBottom_toBottomOf="@+id/tv_weather_baseline"
+        app:layout_constraintVertical_bias="1"
+        tools:text="Облачно c\nпрояснениями"
         />
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/tv_weather_subline"
