@@ -97,7 +97,7 @@ class RequestingWeatherWorker(context: Context, workerParams: WorkerParameters) 
     private fun randomWeatherInfo(): WeatherInfo {
         val index = (Math.random() * WeatherType.values.size).toInt()
         return WeatherInfo(
-            weatherType = WeatherType.values[index],
+            weatherType = WeatherType.getOrNull(index)!!,
             weatherDescription = "Фиг пойми",
             cityName = "Ростов-на-Волге",
             temperature = 30,

@@ -13,12 +13,24 @@ sealed class WeatherType(
     val videoResId: Int,
 ) {
     companion object {
-        // в котлине баг? 3й элемент просто null
-        val values get() = arrayOf(
-            Unknown, Hot, PartlySunny, ClearDay, ClearNight, SnowDay, SnowNight, RainDay, RainNight, PartlyCloudDay,
-            PartlyCloudNight, CloudyDay, CloudyNight, FogDay, FogNight, ThunderstormDay, ThunderstormNight
-        )
+        // в котлине баг? без lazy 3й элемент просто null
+        val values by lazy(LazyThreadSafetyMode.NONE) {
+            arrayOf(
+                Unknown, Hot, PartlySunny, ClearDay, ClearNight, SnowDay, SnowNight, RainDay, RainNight, PartlyCloudDay,
+                PartlyCloudNight, CloudyDay, CloudyNight, FogDay, FogNight, ThunderstormDay, ThunderstormNight
+            )
+        }
+
+        fun getOrNull(index: Int): WeatherType? {
+            val values = values
+            return when (index) {
+                !in values.indices -> null
+                else -> values[index]
+            }
+        }
     }
+
+    val index: Int get() = values.indexOf(this)
 
     object Unknown : WeatherType(0, 0, 0)
 

@@ -23,7 +23,7 @@ class WeatherInfo(
         fun fromData(data: Data): WeatherInfo {
             return data.run {
                 WeatherInfo(
-                    weatherType = WeatherType.values[getInt(KEY_TYPE, 0)],
+                    weatherType = WeatherType.getOrNull(getInt(KEY_TYPE, -1))!!,
                     weatherDescription = getString(KEY_WEATHER_DESCRIPTION)!!,
                     cityName = getString(KEY_CITY_NAME)!!,
                     temperature = getInt(KEY_TEMPERATURE, 0),
@@ -37,7 +37,7 @@ class WeatherInfo(
 
     fun toData(): Data {
         return Data.Builder()
-            .putInt(KEY_TYPE, WeatherType.values.indexOf(weatherType))
+            .putInt(KEY_TYPE, weatherType.index)
             .putString(KEY_WEATHER_DESCRIPTION, weatherDescription)
             .putString(KEY_CITY_NAME, cityName)
             .putInt(KEY_TEMPERATURE, temperature)

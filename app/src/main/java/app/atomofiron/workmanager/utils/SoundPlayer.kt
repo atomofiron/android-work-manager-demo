@@ -14,9 +14,8 @@ class SoundPlayer(
     private var currentSoundId = 0
     private var player: MediaPlayer? = null
 
-    fun play(@RawRes rawId: Int?) = when (rawId) {
+    fun play(@RawRes rawId: Int) = when (rawId) {
         currentSoundId -> Unit
-        null -> Unit
         0 -> cancel()
         else -> {
             lastSoundId = rawId

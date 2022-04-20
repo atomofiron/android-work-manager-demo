@@ -10,26 +10,14 @@ class WeatherViewModel : ViewModel() {
 
     val presenter = WeatherPresenter(this)
 
-    val state = dataFlow(WeatherState(isRefreshing = true, isError = false, weatherInfo = null))
+    val state = dataFlow(WeatherState(isRefreshing = true, weatherInfo = null))
     lateinit var exoPlayer: ExoPlayer
 
-    var soundResId: Int? = null
-        private set
-    var videoResId: Int? = null
-        private set
-    var weatherTypeWasChanged = true
-        private set
-
     fun updateState(action: WeatherState.() -> WeatherState) {
-        val weatherType = state.value.weatherInfo?.weatherType
-        val new = action(state.value)
-        weatherTypeWasChanged = weatherType !== new.weatherInfo?.weatherType
-        soundResId = new.weatherInfo?.weatherType?.soundResId?.takeIf { weatherTypeWasChanged }
-        videoResId = new.weatherInfo?.weatherType?.videoResId?.takeIf { weatherTypeWasChanged }
-        state.value = new
+        state.value = action(state.value)
     }
 
     fun showError() = updateState {
-        copy(isRefreshing = false, isError = true, weatherInfo = null)
+        copy(isRefreshing = false, weatherInfo = null)
     }
 }

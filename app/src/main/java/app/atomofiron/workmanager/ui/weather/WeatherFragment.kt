@@ -11,7 +11,10 @@ import androidx.lifecycle.ViewModelProvider
 import app.atomofiron.workmanager.R
 import app.atomofiron.workmanager.collectOnView
 import app.atomofiron.workmanager.databinding.WeatherFragmentBinding
+import app.atomofiron.workmanager.isValidResId
 import app.atomofiron.workmanager.ui.weather.state.WeatherState
+import app.atomofiron.workmanager.ui.weather.state.WeatherType
+import app.atomofiron.workmanager.ui.weather.state.WeatherTypeDif
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout
 
 class WeatherFragment : Fragment() {
@@ -58,8 +61,12 @@ class WeatherFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        var weatherTypeBefore: WeatherType? = null
         collectOnView(viewModel.state) { state ->
-            render(state)
+            val weatherTypeAfter = state.weatherInfo?.weatherType
+            val dif = WeatherTypeDif.calc(weatherTypeBefore, weatherTypeAfter)
+            weatherTypeBefore = state.weatherInfo?.weatherType
+            render(state, dif)
         }
     }
 
@@ -68,31 +75,34 @@ class WeatherFragment : Fragment() {
         presenter.onStopped()
     }
 
-    private fun render(state: WeatherState) {
+    private fun render(state: WeatherState, dif: WeatherTypeDif) {
         val weatherInfo = state.weatherInfo
+        val weatherType = weatherInfo?.weatherType
         binding.run {
             srl.isRefreshing = state.isRefreshing
-            imNoInfo.isVisible = state.isError || weatherInfo == null
-            imWeather.isVisible = weatherInfo != null
+            imNoInfo.isVisible = !srl.isRefreshing && !weatherType?.backgroundResId.isValidResId()
+            imWeather.isVisible = weatherType?.backgroundResId.isValidResId()
+            imWeather.setImageResource(weatherType?.backgroundResId ?: 0)
+            spvMovie.isVisible = weatherType?.videoResId.isValidResId()
             includeHeader.run {
-                root.isGone = weatherInfo == null
+                root.isVisible = weatherInfo != null
                 if (weatherInfo != null) {
                     tvWeatherTemperature.text = getString(R.string.header_temperature, weatherInfo.temperature)
                     tvWeatherDescription.text = weatherInfo.weatherDescription
                     tvWeatherSubline.text = getString(R.string.header_subline, weatherInfo.cityName, weatherInfo.windSpeed)
+
+                    if (!state.isRefreshing) {
+                        val topLine = AnimationUtils.loadAnimation(context, R.anim.weather_info_appearance)
+                        tvWeatherTemperature.animation = topLine
+                        tvWeatherDescription.animation = topLine
+                        val subLine = AnimationUtils.loadAnimation(context, R.anim.weather_info_appearance)
+                        subLine.startOffset = topLine.duration / 2
+                        tvWeatherSubline.animation = subLine
+                    }
                 }
             }
-            state.weatherInfo?.takeIf { !state.isRefreshing }?.let { weather ->
-                imWeather.setImageResource(weather.weatherType.backgroundResId)
-
-                val topLine = AnimationUtils.loadAnimation(context, R.anim.weather_info_appearance)
-                includeHeader.tvWeatherTemperature.animation = topLine
-                includeHeader.tvWeatherDescription.animation = topLine
-                val subLine = AnimationUtils.loadAnimation(context, R.anim.weather_info_appearance)
-                subLine.startOffset = topLine.duration / 2
-                includeHeader.tvWeatherSubline.animation = subLine
-
-                if (viewModel.weatherTypeWasChanged) {
+            if (!state.isRefreshing) {
+                dif.ifChanged { _, _ ->
                     val anim = AnimationUtils.loadAnimation(context, R.anim.weather_picture_appearance)
                     spvMovie.startAnimation(anim)
                 }
