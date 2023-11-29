@@ -1,6 +1,11 @@
 package app.atomofiron.workmanager.worker
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.location.LocationManager
+import android.os.Build.VERSION.SDK_INT
+import android.os.Build.VERSION_CODES.S
+import androidx.core.content.ContextCompat
 import androidx.core.os.LocaleListCompat
 import androidx.work.CoroutineWorker
 import androidx.work.Data
@@ -20,6 +25,11 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Call
 import retrofit2.Retrofit
 
+val LOCATION_PROVIDER: String get() = when {
+    SDK_INT >= S -> LocationManager.FUSED_PROVIDER
+    else -> LocationManager.GPS_PROVIDER
+}
+
 @Suppress("JSON_FORMAT_REDUNDANT", "OPT_IN_USAGE")
 class RequestingWeatherWorker(context: Context, workerParams: WorkerParameters) : CoroutineWorker(context, workerParams) {
     companion object {
@@ -36,7 +46,7 @@ class RequestingWeatherWorker(context: Context, workerParams: WorkerParameters) 
         fun getInputFake(data: Data): Boolean = data.getBoolean(INPUT_FAKE, false)
     }
 
-    private val locale get() = LocaleListCompat.getDefault().get(0)
+    private val locale get() = LocaleListCompat.getDefault().get(0)!!
     private val retrofit = Retrofit.Builder()
         .baseUrl("https://api.openweathermap.org/")
         .addConverterFactory(factory)
@@ -50,6 +60,7 @@ class RequestingWeatherWorker(context: Context, workerParams: WorkerParameters) 
     private val service: WeatherService = retrofit.create(WeatherService::class.java)
     private var call: Call<WeatherResponse?>? = null
 
+    @SuppressLint("MissingPermission")
     override suspend fun doWork(): Result {
         if (getInputFake(inputData)) {
             delay(1000)
@@ -58,7 +69,10 @@ class RequestingWeatherWorker(context: Context, workerParams: WorkerParameters) 
                 else -> Result.success(randomWeatherInfo().toData())
             }
         }
-        val call = service.weather()
+        val locationManager = ContextCompat.getSystemService(applicationContext, LocationManager::class.java)!!
+        val location = locationManager.getLastKnownLocation(LOCATION_PROVIDER)
+        location ?: return Result.failure()
+        val call = service.weather(latitude = location.latitude, longitude = location.longitude)
         this.call = call
         // todo отменять запрос, если был отменён воркер
         val response = call.execute()

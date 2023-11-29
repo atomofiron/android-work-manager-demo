@@ -8,8 +8,8 @@ import retrofit2.http.Query
 
 interface WeatherService {
     companion object {
-        const val DEFAULT_LATITUDE = 41.724588f
-        const val DEFAULT_LONGITUDE = 44.738759f
+        const val DEFAULT_LATITUDE = 44.799600
+        const val DEFAULT_LONGITUDE = 20.452377
         const val DEFAULT_LANG = "ru"
         const val QUERY_LATITUDE = "lat"
         const val QUERY_LONGITUDE = "lon"
@@ -19,8 +19,8 @@ interface WeatherService {
     }
     @GET("data/2.5/weather")
     fun weather(
-        @Query(QUERY_LATITUDE) latitude: Float = DEFAULT_LATITUDE,
-        @Query(QUERY_LONGITUDE) longitude: Float = DEFAULT_LONGITUDE,
+        @Query(QUERY_LATITUDE) latitude: Double = DEFAULT_LATITUDE,
+        @Query(QUERY_LONGITUDE) longitude: Double = DEFAULT_LONGITUDE,
         @Query(QUERY_API_KEY) apiKey: String = BuildConfig.API_KEY,
         @Query(QUERY_UNITS) units: String = WeatherUnits.Celsius.value,
         @Query(QUERY_LANG) lang: String = DEFAULT_LANG,

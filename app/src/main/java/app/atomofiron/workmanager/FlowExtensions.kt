@@ -5,9 +5,9 @@ import androidx.lifecycle.coroutineScope
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.collect
 
 
 fun <T> dataFlow() = MutableSharedFlow<T>(
@@ -51,14 +51,14 @@ val <T> SharedFlow<T>.valueOrNull: T
         return lastOrNull!!
     }
 
-inline fun <T> Flow<T>.collectOn(coroutineScope: CoroutineScope, crossinline collector: suspend (T) -> Unit) {
+fun <T> Flow<T>.collectOn(coroutineScope: CoroutineScope, collector: FlowCollector<T>) {
     coroutineScope.launch {
         // Flow.collect() блочит корутину, поэтому каждый раз нужно запускать новую
         collect(collector)
     }
 }
 
-inline fun <T> Fragment.collectOnView(flow: Flow<T>, crossinline collector: suspend (T) -> Unit) {
+fun <T> Fragment.collectOnView(flow: Flow<T>, collector: FlowCollector<T>) {
     viewLifecycleOwner.lifecycle.coroutineScope.launch {
         flow.collect(collector)
     }

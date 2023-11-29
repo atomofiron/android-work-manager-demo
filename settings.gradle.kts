@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "app-atomofiron-work-manager"
-include ':app'
+include(":app")

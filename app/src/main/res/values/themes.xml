@@ -12,6 +12,9 @@
         <!-- System bars color. -->
         <item name="android:statusBarColor">@color/transparent</item>
         <item name="android:navigationBarColor">@color/transparent_navigation_bar</item>
+        <item name="android:enforceNavigationBarContrast" tools:targetApi="29">false</item>
         <!-- Customize your theme here. -->
+        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="31">@drawable/splash_icon</item>
+        <item name="android:windowSplashScreenBehavior" tools:targetApi="34">icon_preferred</item>
     </style>
 </resources>
