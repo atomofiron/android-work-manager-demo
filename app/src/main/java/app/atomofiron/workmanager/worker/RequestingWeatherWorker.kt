@@ -13,6 +13,7 @@ import androidx.work.WorkerParameters
 import app.atomofiron.workmanager.api.MainWeather
 import app.atomofiron.workmanager.api.WeatherService
 import app.atomofiron.workmanager.api.response.WeatherResponse
+import app.atomofiron.workmanager.hasLocationPermission
 import app.atomofiron.workmanager.ui.weather.state.ErrorInfo
 import app.atomofiron.workmanager.ui.weather.state.WeatherInfo
 import app.atomofiron.workmanager.ui.weather.state.WeatherType
@@ -62,7 +63,7 @@ class RequestingWeatherWorker(context: Context, workerParams: WorkerParameters) 
 
     @SuppressLint("MissingPermission")
     override suspend fun doWork(): Result {
-        if (getInputFake(inputData)) {
+        if (getInputFake(inputData) || !applicationContext.hasLocationPermission()) {
             delay(1000)
             return when {
                 isStopped -> Result.failure()
